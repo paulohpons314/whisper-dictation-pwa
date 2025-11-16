@@ -1,0 +1,112 @@
+{
+  "name": "Whisper Dictation Premium",
+  "short_name": "Whisper",
+  "description": "Aplicativo premium de ditado de voz com transcrição automática via Whisper API",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#1a1a1a",
+  "theme_color": "#667eea",
+  "orientation": "any",
+  "categories": ["productivity", "utilities"],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-wide.png",
+      "sizes": "1200x675",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Whisper Dictation em modo desktop"
+    },
+    {
+      "src": "screenshot-narrow.png",
+      "sizes": "540x960",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Whisper Dictation em modo mobile"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nova Gravação",
+      "short_name": "Gravar",
+      "description": "Iniciar nova gravação de áudio",
+      "url": "/?action=record",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Upload de Áudio",
+      "short_name": "Upload",
+      "description": "Fazer upload de arquivo de áudio",
+      "url": "/?action=upload",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "iarc_rating_id": "",
+  "protocol_handlers": [],
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "audio/*": [".wav", ".mp3", ".webm", ".ogg", ".m4a", ".aac", ".flac"]
+      },
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ],
+      "launch_type": "single-client"
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "audio",
+          "accept": ["audio/*"]
+        }
+      ]
+    }
+  },
+  "edge_side_panel": {
+    "preferred_width": 600
+  },
+  "launch_handler": {
+    "client_mode": ["navigate-new", "navigate-existing"]
+  }
+}

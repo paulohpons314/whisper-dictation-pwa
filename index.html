@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="description" content="Aplicativo de ditado de voz com transcrição automática via Whisper API">
+    <title>Whisper Dictation - Ditado de Voz</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Skip to main content for screen readers -->
+    <a href="#app" class="skip-link visually-hidden">Pular para o conteúdo principal</a>
+
+    <div id="app" class="app-container state-ready" role="main" aria-label="Aplicativo de Ditado de Voz">
+
+        <!-- Estado Ready -->
+        <div id="ready-state" class="state" role="region" aria-labelledby="ready-heading">
+            <h2 id="ready-heading" class="visually-hidden">Iniciar Nova Gravação</h2>
+            <div class="button-group">
+                <button
+                    id="record-btn"
+                    class="btn btn-primary tooltip"
+                    data-tooltip="Atalho: Ctrl+Shift+R"
+                    aria-label="Iniciar gravação de áudio. Atalho de teclado: Ctrl+Shift+R"
+                    type="button">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                    </svg>
+                    <span>Gravar</span>
+                </button>
+                <button
+                    id="upload-btn"
+                    class="btn btn-secondary tooltip"
+                    data-tooltip="Enviar arquivo de áudio"
+                    aria-label="Fazer upload de arquivo de áudio existente"
+                    type="button">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <span>Upload</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Estado Recording -->
+        <div id="recording-state" class="state hidden" role="region" aria-labelledby="recording-heading" aria-live="polite">
+            <h2 id="recording-heading" class="visually-hidden">Gravação em Andamento</h2>
+
+            <!-- Recording Indicator -->
+            <div class="recording-indicator" role="status" aria-label="Gravando"></div>
+
+            <!-- Waveform Canvas -->
+            <canvas
+                id="waveform"
+                width="500"
+                height="100"
+                aria-label="Visualização da forma de onda do áudio sendo gravado"
+                role="img">
+                Visualização de áudio em tempo real
+            </canvas>
+
+            <!-- Recording Time with Ring Progress -->
+            <div class="recording-time-container">
+                <svg class="ring-progress" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <circle class="ring-bg" cx="40" cy="40" r="36"></circle>
+                    <circle class="ring-fill" cx="40" cy="40" r="36"></circle>
+                </svg>
+                <div
+                    id="recording-time"
+                    class="recording-time"
+                    role="timer"
+                    aria-live="off"
+                    aria-label="Tempo de gravação">
+                    00:00
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button
+                    id="finish-btn"
+                    class="btn btn-success tooltip"
+                    data-tooltip="Finalizar e transcrever"
+                    aria-label="Concluir gravação e iniciar transcrição"
+                    type="button">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span>Concluir</span>
+                </button>
+                <button
+                    id="pause-btn"
+                    class="btn btn-warning tooltip"
+                    data-tooltip="Atalho: Ctrl+Shift+P"
+                    aria-label="Pausar gravação. Atalho de teclado: Ctrl+Shift+P"
+                    aria-pressed="false"
+                    type="button">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="6" y="4" width="4" height="16"/>
+                        <rect x="14" y="4" width="4" height="16"/>
+                    </svg>
+                    <span>Pausar</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Estado Processing -->
+        <div id="processing-state" class="state hidden" role="region" aria-labelledby="processing-heading" aria-live="polite">
+            <h2 id="processing-heading" class="visually-hidden">Processamento de Áudio</h2>
+            <div class="spinner" role="status" aria-label="Processando transcrição"></div>
+            <p class="status-text" aria-live="polite">Transcrevendo áudio...</p>
+        </div>
+
+        <!-- Estado Result -->
+        <div id="result-state" class="state hidden" role="region" aria-labelledby="result-heading">
+            <div class="result-header">
+                <h3 id="result-heading">Transcrição</h3>
+                <span
+                    class="copied-badge"
+                    id="copied-badge"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true">
+                    Copiado!
+                </span>
+            </div>
+            <textarea
+                id="transcription"
+                class="transcription-text"
+                readonly
+                aria-label="Texto transcrito do áudio"
+                aria-describedby="transcription-description"
+                placeholder="A transcrição aparecerá aqui...">
+            </textarea>
+            <p id="transcription-description" class="visually-hidden">
+                Texto transcrito automaticamente do áudio gravado ou enviado.
+                O texto é copiado automaticamente para a área de transferência.
+            </p>
+
+            <div class="button-group">
+                <button
+                    id="copy-btn"
+                    class="btn btn-secondary tooltip"
+                    data-tooltip="Copiar para área de transferência"
+                    aria-label="Copiar texto transcrito para a área de transferência"
+                    type="button">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    <span>Copiar</span>
+                </button>
+                <button
+                    id="new-btn"
+                    class="btn btn-primary tooltip"
+                    data-tooltip="Iniciar nova gravação"
+                    aria-label="Voltar para iniciar nova gravação"
+                    type="button">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="1 4 1 10 7 10"/>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                    </svg>
+                    <span>Nova Gravação</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input for upload -->
+    <input
+        type="file"
+        id="file-input"
+        accept="audio/*,audio/wav,audio/mp3,audio/webm,audio/ogg,audio/m4a"
+        aria-label="Selecionar arquivo de áudio para upload"
+        style="display: none;">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" role="region" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
