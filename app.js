@@ -39,6 +39,9 @@ const recordingTime = document.getElementById('recording-time');
 const copiedBadge = document.getElementById('copied-badge');
 const toastContainer = document.getElementById('toast-container');
 
+const shortcutsModal = document.getElementById('shortcuts-modal');
+const closeShortcutsBtn = document.getElementById('close-shortcuts');
+
 // ========================================
 // API CONFIGURATION
 // ========================================
@@ -573,11 +576,13 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-    // Ctrl+Shift+P - Pause/Resume
+    // Ctrl+Shift+P - Pause/Resume OR Export PDF (context-dependent)
     if (e.ctrlKey && e.shiftKey && e.key === 'P') {
         e.preventDefault();
         if (app.classList.contains('state-recording')) {
             togglePause();
+        } else if (app.classList.contains('state-result')) {
+            exportAsPDF();
         }
     }
 
@@ -585,6 +590,50 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && app.classList.contains('state-result')) {
         e.preventDefault();
         setState('ready');
+    }
+
+    // Ctrl+Shift+C - Copy edited text (in result state)
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        if (app.classList.contains('state-result')) {
+            copyToClipboard();
+        }
+    }
+
+    // Ctrl+E - Export as Markdown
+    if (e.ctrlKey && e.key === 'e') {
+        e.preventDefault();
+        if (app.classList.contains('state-result')) {
+            exportAsMarkdown();
+        }
+    }
+
+    // Ctrl+Shift+W - Export as Word
+    if (e.ctrlKey && e.shiftKey && e.key === 'W') {
+        e.preventDefault();
+        if (app.classList.contains('state-result')) {
+            exportAsWord();
+        }
+    }
+
+    // Ctrl+N - New recording (from result)
+    if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        if (app.classList.contains('state-result')) {
+            setState('ready');
+        }
+    }
+
+    // F1 or ? - Show keyboard shortcuts
+    if (e.key === 'F1' || e.key === '?') {
+        e.preventDefault();
+        shortcutsModal.classList.remove('hidden');
+    }
+
+    // Escape - Close shortcuts modal (if open)
+    if (e.key === 'Escape' && !shortcutsModal.classList.contains('hidden')) {
+        e.preventDefault();
+        shortcutsModal.classList.add('hidden');
     }
 });
 
@@ -603,6 +652,17 @@ fileInput.addEventListener('change', handleFileUpload);
 exportMarkdownBtn.addEventListener('click', exportAsMarkdown);
 exportPdfBtn.addEventListener('click', exportAsPDF);
 exportWordBtn.addEventListener('click', exportAsWord);
+
+// Shortcuts modal
+closeShortcutsBtn.addEventListener('click', () => {
+    shortcutsModal.classList.add('hidden');
+});
+
+shortcutsModal.addEventListener('click', (e) => {
+    if (e.target === shortcutsModal) {
+        shortcutsModal.classList.add('hidden');
+    }
+});
 
 // ========================================
 // SERVICE WORKER REGISTRATION (PWA)
