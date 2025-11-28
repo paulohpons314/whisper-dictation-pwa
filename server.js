@@ -15,6 +15,10 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Log para debug
+console.log('🔐 API Key configured:', !!process.env.OPENAI_API_KEY);
+console.log('📂 Serving from:', __dirname);
+
 // Configurar multer para upload de arquivos
 const upload = multer({
     storage: multer.memoryStorage(),
