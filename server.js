@@ -122,7 +122,7 @@ app.get('/api/health', (req, res) => {
 // ========================================
 // INICIAR SERVIDOR
 // ========================================
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log('╔════════════════════════════════════════╗');
     console.log('║  🎙️  Whisper Dictation Server         ║');
     console.log('╠════════════════════════════════════════╣');
@@ -137,6 +137,9 @@ app.listen(PORT, () => {
     console.log('');
     console.log('⚡ Servidor rodando! Pressione Ctrl+C para parar.');
 });
+
+// Export for serverless (Vercel)
+module.exports = app;
 
 // Tratamento de erros global
 app.use((error, req, res, next) => {
