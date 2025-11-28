@@ -1,7 +1,7 @@
 {
-  "name": "Whisper Dictation Premium",
-  "short_name": "Whisper",
-  "description": "Aplicativo premium de ditado de voz com transcrição automática via Whisper API",
+  "name": "FasterType - Transcrição Multi-idioma",
+  "short_name": "FasterType",
+  "description": "Aplicativo premium de ditado de voz com transcrição em PT/EN/ES, editor rico e exportação em PDF/Word/Markdown",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

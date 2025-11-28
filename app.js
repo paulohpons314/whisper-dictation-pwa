@@ -9,6 +9,7 @@ let animationId = null;
 let startTime = null;
 let timerInterval = null;
 let isPaused = false;
+let quillEditor = null;
 
 // ========================================
 // DOM ELEMENTS
@@ -26,11 +27,15 @@ const pauseBtn = document.getElementById('pause-btn');
 const copyBtn = document.getElementById('copy-btn');
 const newBtn = document.getElementById('new-btn');
 const fileInput = document.getElementById('file-input');
+const languageSelect = document.getElementById('language-select');
+
+const exportMarkdownBtn = document.getElementById('export-markdown-btn');
+const exportPdfBtn = document.getElementById('export-pdf-btn');
+const exportWordBtn = document.getElementById('export-word-btn');
 
 const waveformCanvas = document.getElementById('waveform');
 const ctx = waveformCanvas.getContext('2d');
 const recordingTime = document.getElementById('recording-time');
-const transcriptionText = document.getElementById('transcription');
 const copiedBadge = document.getElementById('copied-badge');
 const toastContainer = document.getElementById('toast-container');
 
@@ -345,10 +350,13 @@ function stopWaveform() {
 // ========================================
 async function transcribeAudio(audioBlob) {
     try {
+        // Pegar idioma selecionado
+        const selectedLanguage = languageSelect.value;
+        
         // Criar FormData com o arquivo de áudio
         const formData = new FormData();
         formData.append('audio', audioBlob, 'audio.webm');
-        formData.append('language', 'pt');
+        formData.append('language', selectedLanguage);
 
         // Enviar para o servidor backend (que mantém a chave segura)
         const response = await fetch(`${API_BASE_URL}${TRANSCRIBE_ENDPOINT}`, {
@@ -375,25 +383,158 @@ async function transcribeAudio(audioBlob) {
 // SHOW RESULT
 // ========================================
 function showResult(text) {
-    transcriptionText.value = text;
+    // Inicializar Quill editor se não existir
+    if (!quillEditor) {
+        quillEditor = new Quill('#transcription-editor', {
+            theme: 'snow',
+            placeholder: 'A transcrição aparecerá aqui...',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['clean']
+                ]
+            }
+        });
+    }
+    
+    // Inserir texto transcrito
+    quillEditor.setText(text);
     setState('result');
 
-    // Auto-copy to clipboard
-    copyToClipboard(text, true);
+    // Auto-copy to clipboard em formato Markdown
+    const markdown = quillToMarkdown();
+    copyToClipboard(markdown, true);
+}
+
+// ========================================
+// QUILL TO MARKDOWN CONVERTER
+// ========================================
+function quillToMarkdown() {
+    const delta = quillEditor.getContents();
+    let markdown = '';
+    let currentLine = '';
+    
+    delta.ops.forEach((op, index) => {
+        if (typeof op.insert === 'string') {
+            let text = op.insert;
+            
+            // Apply formatting
+            if (op.attributes) {
+                if (op.attributes.bold) {
+                    text = `**${text}**`;
+                }
+                if (op.attributes.italic) {
+                    text = `*${text}*`;
+                }
+                if (op.attributes.underline) {
+                    text = `__${text}__`;
+                }
+            }
+            
+            currentLine += text;
+            
+            // Check for newlines
+            if (text.includes('\n')) {
+                const lines = currentLine.split('\n');
+                lines.forEach((line, i) => {
+                    if (i > 0) markdown += '\n';
+                    if (line.trim()) markdown += line;
+                });
+                currentLine = '';
+            }
+        }
+    });
+    
+    if (currentLine.trim()) {
+        markdown += currentLine;
+    }
+    
+    return markdown.trim();
+}
+
+// ========================================
+// EXPORT FUNCTIONS
+// ========================================
+async function exportAsMarkdown() {
+    const markdown = quillToMarkdown();
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    downloadFile(blob, 'transcricao.md');
+    showToast('Exportado como Markdown!', 'success');
+}
+
+async function exportAsPDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const text = quillEditor.getText();
+        const lines = doc.splitTextToSize(text, 180);
+        
+        doc.setFont('helvetica');
+        doc.setFontSize(12);
+        doc.text(lines, 15, 20);
+        
+        doc.save('transcricao.pdf');
+        showToast('Exportado como PDF!', 'success');
+    } catch (error) {
+        console.error('PDF export error:', error);
+        showToast('Erro ao exportar PDF', 'error');
+    }
+}
+
+async function exportAsWord() {
+    try {
+        const { Document, Packer, Paragraph, TextRun } = docx;
+        
+        const text = quillEditor.getText();
+        const paragraphs = text.split('\n').filter(p => p.trim()).map(p => 
+            new Paragraph({
+                children: [new TextRun(p)]
+            })
+        );
+        
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: paragraphs
+            }]
+        });
+        
+        const blob = await Packer.toBlob(doc);
+        downloadFile(blob, 'transcricao.docx');
+        showToast('Exportado como Word!', 'success');
+    } catch (error) {
+        console.error('Word export error:', error);
+        showToast('Erro ao exportar Word', 'error');
+    }
+}
+
+function downloadFile(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // ========================================
 // CLIPBOARD FUNCTIONS
 // ========================================
-async function copyToClipboard(text, auto = false) {
+async function copyToClipboard(text = null, auto = false) {
     try {
-        await navigator.clipboard.writeText(text);
+        const textToCopy = text || quillToMarkdown();
+        await navigator.clipboard.writeText(textToCopy);
 
         if (!auto) {
             copiedBadge.classList.add('show');
             setTimeout(() => {
                 copiedBadge.classList.remove('show');
             }, 2000);
+            showToast('Copiado como Markdown!', 'success');
         }
     } catch (error) {
         console.error('Copy error:', error);
@@ -454,9 +595,14 @@ recordBtn.addEventListener('click', startRecording);
 uploadBtn.addEventListener('click', () => fileInput.click());
 finishBtn.addEventListener('click', finishRecording);
 pauseBtn.addEventListener('click', togglePause);
-copyBtn.addEventListener('click', () => copyToClipboard(transcriptionText.value));
+copyBtn.addEventListener('click', () => copyToClipboard());
 newBtn.addEventListener('click', () => setState('ready'));
 fileInput.addEventListener('change', handleFileUpload);
+
+// Export buttons
+exportMarkdownBtn.addEventListener('click', exportAsMarkdown);
+exportPdfBtn.addEventListener('click', exportAsPDF);
+exportWordBtn.addEventListener('click', exportAsWord);
 
 // ========================================
 // SERVICE WORKER REGISTRATION (PWA)
