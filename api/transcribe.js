@@ -4,14 +4,9 @@
 const formidable = require('formidable');
 const FormData = require('form-data');
 const fetch = require('node-fetch');
+const fs = require('fs');
 
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -35,62 +30,81 @@ export default async function handler(req, res) {
             });
         }
 
-        // Parse form data
-        const form = formidable({ maxFileSize: 25 * 1024 * 1024 });
+        // Parse form data com callback style
+        const form = formidable({ 
+            maxFileSize: 25 * 1024 * 1024,
+            multiples: false
+        });
         
-        const [fields, files] = await new Promise((resolve, reject) => {
-            form.parse(req, (err, fields, files) => {
-                if (err) reject(err);
-                resolve([fields, files]);
-            });
-        });
+        form.parse(req, async (err, fields, files) => {
+            if (err) {
+                console.error('Form parse error:', err);
+                return res.status(500).json({
+                    error: 'Erro ao processar upload',
+                    message: err.message
+                });
+            }
 
-        const audioFile = files.audio;
-        if (!audioFile) {
-            return res.status(400).json({
-                error: 'Nenhum arquivo de áudio foi enviado'
-            });
-        }
+            try {
+                // Pegar arquivo (formidable v3 retorna arrays)
+                const audioFile = files.audio?.[0] || files.audio;
+                
+                if (!audioFile) {
+                    return res.status(400).json({
+                        error: 'Nenhum arquivo de áudio foi enviado'
+                    });
+                }
 
-        // Ler arquivo
-        const fs = require('fs');
-        const fileBuffer = fs.readFileSync(audioFile[0].filepath);
+                // Ler arquivo
+                const fileBuffer = fs.readFileSync(audioFile.filepath);
 
-        // Criar FormData para enviar à API do Whisper
-        const formData = new FormData();
-        formData.append('file', fileBuffer, {
-            filename: audioFile[0].originalFilename || 'audio.webm',
-            contentType: audioFile[0].mimetype
-        });
-        formData.append('model', 'whisper-1');
-        formData.append('language', fields.language?.[0] || 'pt');
+                // Criar FormData para enviar à API do Whisper
+                const formData = new FormData();
+                formData.append('file', fileBuffer, {
+                    filename: audioFile.originalFilename || 'audio.webm',
+                    contentType: audioFile.mimetype
+                });
+                formData.append('model', 'whisper-1');
+                
+                // Pegar idioma (formidable v3 retorna arrays)
+                const language = fields.language?.[0] || fields.language || 'pt';
+                formData.append('language', language);
 
-        // Fazer requisição à API do Whisper
-        const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                ...formData.getHeaders()
-            },
-            body: formData
-        });
+                // Fazer requisição à API do Whisper
+                const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                        ...formData.getHeaders()
+                    },
+                    body: formData
+                });
 
-        // Verificar resposta
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('Erro da API Whisper:', errorData);
+                // Verificar resposta
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Erro da API Whisper:', errorData);
 
-            return res.status(response.status).json({
-                error: errorData.error?.message || 'Erro ao transcrever áudio',
-                details: errorData
-            });
-        }
+                    return res.status(response.status).json({
+                        error: errorData.error?.message || 'Erro ao transcrever áudio',
+                        details: errorData
+                    });
+                }
 
-        // Retornar transcrição
-        const data = await response.json();
-        res.status(200).json({
-            text: data.text,
-            duration: data.duration
+                // Retornar transcrição
+                const data = await response.json();
+                res.status(200).json({
+                    text: data.text,
+                    duration: data.duration
+                });
+
+            } catch (error) {
+                console.error('Erro ao processar:', error);
+                res.status(500).json({
+                    error: 'Erro ao processar transcrição',
+                    message: error.message
+                });
+            }
         });
 
     } catch (error) {
@@ -100,4 +114,4 @@ export default async function handler(req, res) {
             message: error.message
         });
     }
-}
+};
