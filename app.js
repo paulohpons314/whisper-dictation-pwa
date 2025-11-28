@@ -576,12 +576,18 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-    // Ctrl+Shift+P - Pause/Resume OR Export PDF (context-dependent)
+    // Ctrl+Shift+P - Pause/Resume
+    // Ctrl+Shift+D - Export PDF (in result state)
     if (e.ctrlKey && e.shiftKey && e.key === 'P') {
         e.preventDefault();
         if (app.classList.contains('state-recording')) {
             togglePause();
-        } else if (app.classList.contains('state-result')) {
+        }
+    }
+
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        if (app.classList.contains('state-result')) {
             exportAsPDF();
         }
     }
@@ -624,16 +630,21 @@ document.addEventListener('keydown', (e) => {
         }
     }
 
-    // F1 or ? - Show keyboard shortcuts
-    if (e.key === 'F1' || e.key === '?') {
+    // Ctrl+/ or Ctrl+H - Show keyboard shortcuts
+    if ((e.ctrlKey && e.key === '/') || (e.ctrlKey && e.key === 'h')) {
         e.preventDefault();
         shortcutsModal.classList.remove('hidden');
     }
 
-    // Escape - Close shortcuts modal (if open)
-    if (e.key === 'Escape' && !shortcutsModal.classList.contains('hidden')) {
-        e.preventDefault();
-        shortcutsModal.classList.add('hidden');
+    // Escape - Close shortcuts modal (if open) OR return to ready
+    if (e.key === 'Escape') {
+        if (!shortcutsModal.classList.contains('hidden')) {
+            e.preventDefault();
+            shortcutsModal.classList.add('hidden');
+        } else if (app.classList.contains('state-result')) {
+            e.preventDefault();
+            setState('ready');
+        }
     }
 });
 
