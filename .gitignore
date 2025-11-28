@@ -27,3 +27,5 @@ build/
 
 # Windows reserved filename
 nul
+.vercel
+.env*.local
