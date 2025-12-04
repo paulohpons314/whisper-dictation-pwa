@@ -1,4 +1,4 @@
-const CACHE_NAME = 'whisper-dictation-v1';
+const CACHE_NAME = 'whisper-dictation-v2';
 const urlsToCache = [
   '/',
   '/index.html',
