@@ -23,7 +23,7 @@
         <!-- Estado Ready -->
         <div id="ready-state" class="state" role="region" aria-labelledby="ready-heading">
             <h2 id="ready-heading" class="visually-hidden">Iniciar Nova Gravação</h2>
-            
+
             <!-- Language Selector -->
             <div class="language-selector">
                 <label for="language-select" class="language-label">Idioma da transcrição:</label>
@@ -33,12 +33,12 @@
                     <option value="es">🇪🇸 Español</option>
                 </select>
             </div>
-            
+
             <div class="button-group">
                 <button
                     id="record-btn"
-                    class="btn btn-primary tooltip"
-                    data-tooltip="Atalho: Ctrl+Shift+R"
+                    class="btn btn-primary icon-only tooltip"
+                    data-tooltip="Gravar (Ctrl+Shift+R)"
                     aria-label="Iniciar gravação de áudio. Atalho de teclado: Ctrl+Shift+R"
                     type="button">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -49,8 +49,8 @@
                 </button>
                 <button
                     id="upload-btn"
-                    class="btn btn-secondary tooltip"
-                    data-tooltip="Enviar arquivo de áudio"
+                    class="btn btn-secondary btn-discrete icon-only tooltip"
+                    data-tooltip="Upload de arquivo"
                     aria-label="Fazer upload de arquivo de áudio existente"
                     type="button">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -73,51 +73,23 @@
             <!-- Waveform Canvas -->
             <canvas
                 id="waveform"
-                width="500"
-                height="100"
+                width="480"
+                height="80"
                 aria-label="Visualização da forma de onda do áudio sendo gravado"
                 role="img">
                 Visualização de áudio em tempo real
             </canvas>
 
-            <!-- Recording Time with Ring Progress -->
-            <div class="recording-time-container">
-                <svg class="ring-progress" aria-hidden="true">
-                    <defs>
-                        <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-                        </linearGradient>
-                    </defs>
-                    <circle class="ring-bg" cx="40" cy="40" r="36"></circle>
-                    <circle class="ring-fill" cx="40" cy="40" r="36"></circle>
-                </svg>
-                <div
-                    id="recording-time"
-                    class="recording-time"
-                    role="timer"
-                    aria-live="off"
-                    aria-label="Tempo de gravação">
-                    00:00
-                </div>
+            <!-- Recording Time (compact) -->
+            <div class="recording-time-compact">
+                <span id="recording-time" role="timer" aria-live="off" aria-label="Tempo de gravação">00:00</span>
             </div>
 
             <div class="button-group">
                 <button
-                    id="finish-btn"
-                    class="btn btn-success tooltip"
-                    data-tooltip="Finalizar e transcrever"
-                    aria-label="Concluir gravação e iniciar transcrição"
-                    type="button">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    <span>Concluir</span>
-                </button>
-                <button
                     id="pause-btn"
-                    class="btn btn-warning tooltip"
-                    data-tooltip="Atalho: Ctrl+Shift+P"
+                    class="btn btn-warning icon-only tooltip"
+                    data-tooltip="Pausar (Ctrl+Shift+P)"
                     aria-label="Pausar gravação. Atalho de teclado: Ctrl+Shift+P"
                     aria-pressed="false"
                     type="button">
@@ -126,6 +98,17 @@
                         <rect x="14" y="4" width="4" height="16"/>
                     </svg>
                     <span>Pausar</span>
+                </button>
+                <button
+                    id="finish-btn"
+                    class="btn btn-success icon-only tooltip"
+                    data-tooltip="Concluir e transcrever"
+                    aria-label="Concluir gravação e iniciar transcrição"
+                    type="button">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span>Concluir</span>
                 </button>
             </div>
         </div>
@@ -137,98 +120,119 @@
             <p class="status-text" aria-live="polite">Transcrevendo áudio...</p>
         </div>
 
-        <!-- Estado Result -->
+        <!-- Estado Result (Compact) -->
         <div id="result-state" class="state hidden" role="region" aria-labelledby="result-heading">
-            <div class="result-header">
-                <h3 id="result-heading">Transcrição</h3>
-                <span
-                    class="copied-badge"
-                    id="copied-badge"
-                    role="status"
-                    aria-live="polite"
-                    aria-atomic="true">
-                    Copiado!
-                </span>
-            </div>
-            
-            <!-- Quill Editor Container -->
-            <div id="editor-container" class="editor-wrapper">
-                <div id="transcription-editor" aria-label="Editor de texto transcrito"></div>
-            </div>
-            
-            <p id="transcription-description" class="visually-hidden">
-                Texto transcrito automaticamente do áudio gravado ou enviado.
-                Use a barra de ferramentas para formatar o texto (negrito, itálico, listas).
-            </p>
+            <h2 id="result-heading" class="visually-hidden">Transcrição Concluída</h2>
 
-            <!-- Export Buttons -->
-            <div class="export-group">
-                <button
-                    id="export-markdown-btn"
-                    class="btn btn-export tooltip"
-                    data-tooltip="Exportar Markdown (Ctrl+E)"
-                    aria-label="Exportar transcrição como arquivo Markdown. Atalho: Ctrl+E"
-                    type="button">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="12" y1="18" x2="12" y2="12"/>
-                        <line x1="9" y1="15" x2="15" y2="15"/>
-                    </svg>
-                    <span>Markdown</span>
-                </button>
-                <button
-                    id="export-pdf-btn"
-                    class="btn btn-export tooltip"
-                    data-tooltip="Exportar PDF (Ctrl+Shift+D)"
-                    aria-label="Exportar transcrição como arquivo PDF. Atalho: Ctrl+Shift+D"
-                    type="button">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    <span>PDF</span>
-                </button>
-                <button
-                    id="export-word-btn"
-                    class="btn btn-export tooltip"
-                    data-tooltip="Exportar Word (Ctrl+Shift+W)"
-                    aria-label="Exportar transcrição como arquivo Word. Atalho: Ctrl+Shift+W"
-                    type="button">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    <span>Word</span>
-                </button>
+            <div class="result-compact-message">
+                <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                <p>✓ Copiado para clipboard</p>
             </div>
 
             <div class="button-group">
                 <button
-                    id="copy-btn"
-                    class="btn btn-secondary tooltip"
-                    data-tooltip="Copiar como Markdown (Ctrl+Shift+C)"
-                    aria-label="Copiar texto transcrito para a área de transferência em formato Markdown. Atalho: Ctrl+Shift+C"
-                    type="button">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                    </svg>
-                    <span>Copiar</span>
-                </button>
-                <button
                     id="new-btn"
-                    class="btn btn-primary tooltip"
+                    class="btn btn-primary icon-only tooltip"
                     data-tooltip="Nova Gravação (Ctrl+N)"
                     aria-label="Voltar para iniciar nova gravação. Atalho: Ctrl+N"
                     type="button">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <polyline points="1 4 1 10 7 10"/>
-                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="3" fill="currentColor"/>
                     </svg>
                     <span>Nova Gravação</span>
                 </button>
             </div>
+
+            <!-- Expand button (bottom right) -->
+            <button
+                id="expand-editor-btn"
+                class="expand-btn tooltip"
+                data-tooltip="Abrir editor"
+                aria-label="Abrir editor de texto completo"
+                type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <polyline points="9 21 3 21 3 15"></polyline>
+                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Editor Modal -->
+    <div id="editor-modal" class="editor-modal hidden" role="dialog" aria-labelledby="editor-modal-title" aria-modal="true">
+        <div class="editor-modal-header">
+            <h3 id="editor-modal-title">Editor de Transcrição</h3>
+            <button id="close-editor-btn" class="close-btn" aria-label="Fechar editor">&times;</button>
+        </div>
+        <div class="editor-modal-body">
+            <!-- Quill Editor Container -->
+            <div id="editor-container" class="editor-wrapper">
+                <div id="transcription-editor" aria-label="Editor de texto transcrito"></div>
+            </div>
+
+            <p id="transcription-description" class="visually-hidden">
+                Texto transcrito automaticamente do áudio gravado ou enviado.
+                Use a barra de ferramentas para formatar o texto (negrito, itálico, listas).
+            </p>
+        </div>
+        <div class="editor-modal-footer">
+            <!-- Export Buttons -->
+            <button
+                id="export-markdown-btn"
+                class="btn btn-export tooltip"
+                data-tooltip="Exportar Markdown (Ctrl+E)"
+                aria-label="Exportar transcrição como arquivo Markdown. Atalho: Ctrl+E"
+                type="button">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+                <span>Markdown</span>
+            </button>
+            <button
+                id="export-pdf-btn"
+                class="btn btn-export tooltip"
+                data-tooltip="Exportar PDF (Ctrl+Shift+D)"
+                aria-label="Exportar transcrição como arquivo PDF. Atalho: Ctrl+Shift+D"
+                type="button">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span>PDF</span>
+            </button>
+            <button
+                id="export-word-btn"
+                class="btn btn-export tooltip"
+                data-tooltip="Exportar Word (Ctrl+Shift+W)"
+                aria-label="Exportar transcrição como arquivo Word. Atalho: Ctrl+Shift+W"
+                type="button">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span>Word</span>
+            </button>
+            <button
+                id="copy-btn"
+                class="btn btn-secondary tooltip"
+                data-tooltip="Copiar como Markdown (Ctrl+Shift+C)"
+                aria-label="Copiar texto transcrito para a área de transferência em formato Markdown. Atalho: Ctrl+Shift+C"
+                type="button">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span>Copiar</span>
+            </button>
         </div>
     </div>
 

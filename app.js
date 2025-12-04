@@ -36,11 +36,14 @@ const exportWordBtn = document.getElementById('export-word-btn');
 const waveformCanvas = document.getElementById('waveform');
 const ctx = waveformCanvas.getContext('2d');
 const recordingTime = document.getElementById('recording-time');
-const copiedBadge = document.getElementById('copied-badge');
 const toastContainer = document.getElementById('toast-container');
 
 const shortcutsModal = document.getElementById('shortcuts-modal');
 const closeShortcutsBtn = document.getElementById('close-shortcuts');
+
+const editorModal = document.getElementById('editor-modal');
+const expandEditorBtn = document.getElementById('expand-editor-btn');
+const closeEditorBtn = document.getElementById('close-editor-btn');
 
 // ========================================
 // API CONFIGURATION
@@ -126,7 +129,17 @@ function setState(state) {
 
 function resetRecordingUI() {
     recordingTime.textContent = '00:00';
-    updateRingProgress(0);
+}
+
+// ========================================
+// EDITOR MODAL MANAGEMENT
+// ========================================
+function openEditorModal() {
+    editorModal.classList.remove('hidden');
+}
+
+function closeEditorModal() {
+    editorModal.classList.add('hidden');
 }
 
 // ========================================
@@ -135,22 +148,6 @@ function resetRecordingUI() {
 function animateSuccess() {
     // Add success animation class to result state
     resultState.style.animation = 'fadeInUp 400ms cubic-bezier(0.19, 1, 0.22, 1)';
-}
-
-// ========================================
-// RING PROGRESS UPDATE
-// ========================================
-function updateRingProgress(seconds) {
-    const ringFill = document.querySelector('.ring-fill');
-    if (!ringFill) return;
-
-    // Calculate progress (max 60 seconds for full circle)
-    const maxSeconds = 60;
-    const progress = Math.min(seconds / maxSeconds, 1);
-    const circumference = 2 * Math.PI * 36; // radius = 36
-    const offset = circumference * (1 - progress);
-
-    ringFill.style.strokeDashoffset = offset;
 }
 
 // ========================================
@@ -254,10 +251,6 @@ function startTimer() {
         const minutes = Math.floor(elapsed / 60000);
         const seconds = Math.floor((elapsed % 60000) / 1000);
         recordingTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
-        // Update ring progress
-        const totalSeconds = minutes * 60 + seconds;
-        updateRingProgress(totalSeconds);
     }, 100);
 }
 
@@ -636,9 +629,12 @@ document.addEventListener('keydown', (e) => {
         shortcutsModal.classList.remove('hidden');
     }
 
-    // Escape - Close shortcuts modal (if open) OR return to ready
+    // Escape - Close editor modal OR shortcuts modal OR return to ready
     if (e.key === 'Escape') {
-        if (!shortcutsModal.classList.contains('hidden')) {
+        if (!editorModal.classList.contains('hidden')) {
+            e.preventDefault();
+            closeEditorModal();
+        } else if (!shortcutsModal.classList.contains('hidden')) {
             e.preventDefault();
             shortcutsModal.classList.add('hidden');
         } else if (app.classList.contains('state-result')) {
@@ -675,6 +671,10 @@ shortcutsModal.addEventListener('click', (e) => {
     }
 });
 
+// Editor modal
+expandEditorBtn.addEventListener('click', openEditorModal);
+closeEditorBtn.addEventListener('click', closeEditorModal);
+
 // ========================================
 // SERVICE WORKER REGISTRATION (PWA)
 // ========================================
@@ -690,16 +690,9 @@ if ('serviceWorker' in navigator) {
 function managePWAWindowSize() {
     // Check if running as PWA
     if (window.matchMedia('(display-mode: standalone)').matches) {
-        // Set window size on load
-        const currentState = app.className.split(' ')[1];
-
-        if (currentState === 'state-ready' ||
-            currentState === 'state-recording' ||
-            currentState === 'state-processing') {
-            // Try to resize window (works in some PWA environments)
-            if (window.resizeTo) {
-                window.resizeTo(600, 350);
-            }
+        // Compact window size for all states (except when modal is open)
+        if (window.resizeTo && editorModal.classList.contains('hidden')) {
+            window.resizeTo(520, 250);
         }
     }
 }
